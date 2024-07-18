@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 import pandas as pd
 from PIL import Image, ImageOps, ImageDraw
 import io
@@ -156,6 +157,7 @@ def make_image(data):
 
     # Create the plot with GridSpec
     fig = plt.figure(figsize=(12, 10), facecolor='#c9c9c9')  # Set the background color and figure size here c9c9c9
+
     gs = GridSpec(5, 1, height_ratios=[0.07, 0.13, 0.20, 0.10, 0.30])  # Adjust height ratios
 
     # Create an axis to place the main logo
@@ -252,20 +254,20 @@ def make_image(data):
 
         # Add text underneath the bar graph
     heading = 'Top 3 Bench Expenses'
-    subText = '(Minutes Spent on Bench)'
+    subText = '(Time Spent on Bench)'
     team_a_players = df['Players'][0]
     team_b_players = df['Players'][1]
 
     team_a_bench = df['BenchMin'][0]
     team_b_bench = df['BenchMin'][1]
 
-    x_pos_A = 0.09
-    y_start_A = 0.6
+    x_pos_A = 0.07
+    y_start_A = 0.63
     
-    x_pos_B = 0.55
-    y_start_B = 0.6
+    x_pos_B = 0.93
+    y_start_B = 0.63
 
-    y_step = 0.3
+    y_step = 0.25
     renderer = ax_text.figure.canvas.get_renderer()
 
     for i in range(3):
@@ -281,10 +283,12 @@ def make_image(data):
         playerA = crop_top(playerA)
         playerB = crop_top(playerB)
 
+        # Image for Team A
         imageboxA = OffsetImage(playerA, zoom=0.28)
         ab_A = AnnotationBbox(imageboxA, (x_pos_A, y_start_A - i * y_step), frameon=False)
         ax_text.add_artist(ab_A)
 
+        # Image for Team B
         imageboxB = OffsetImage(playerB, zoom=0.28)
         ab_B = AnnotationBbox(imageboxB, (x_pos_B, y_start_B - i * y_step), frameon=False)
         ax_text.add_artist(ab_B)
@@ -293,21 +297,62 @@ def make_image(data):
         name_font_a = get_dynamic_font_size(team_a_players[i], 0.82, font_names.copy(), renderer, fig)
         name_font_b = get_dynamic_font_size(team_b_players[i], 0.82, font_names.copy(), renderer, fig)
 
-        # Adjust y position offsets
-        ax_text.text(x_pos_A + 0.08, y_start_A - i * y_step, f"{team_a_players[i]}", va='center', ha='left', color='black', fontproperties=name_font_a)
-        ax_text.text(x_pos_A + 0.24, y_start_A - i * y_step + 0.02, f"{team_a_money[i]}", va='center', ha='left', color='black', fontproperties=font_money)
-        ax_text.text(x_pos_A + 0.26, y_start_A - i * y_step - 0.04, f"{team_a_bench[i]}", va='center', ha='left', color='black', fontproperties=font_minutes)
+        # Calculate text width for right-aligned text
+        fig_width_in_pixels = fig.get_size_inches()[0] * fig.dpi
+        player_a_name_width = renderer.get_text_width_height_descent(f"{team_a_players[i]}", name_font_a, False)[0]
+        player_a_money_width = renderer.get_text_width_height_descent(f"{team_a_money[i]}", font_money, False)[0]
+        player_a_bench_width = renderer.get_text_width_height_descent(f"{team_a_bench[i]}", font_minutes, False)[0]
 
-        ax_text.text(x_pos_B + 0.08, y_start_B - i * y_step, f"{team_b_players[i]}", va='center', ha='left', color='black', fontproperties=name_font_b)
-        ax_text.text(x_pos_B + 0.24, y_start_B - i * y_step + 0.02, f"{team_b_money[i]}", va='center', ha='left', color='black', fontproperties=font_money)
-        ax_text.text(x_pos_B + 0.26, y_start_B - i * y_step - 0.04, f"{team_b_bench[i]}", va='center', ha='left', color='black', fontproperties=font_minutes)
+        player_b_name_width = renderer.get_text_width_height_descent(f"{team_b_players[i]}", name_font_b, False)[0]
+        player_b_money_width = renderer.get_text_width_height_descent(f"{team_b_money[i]}", font_money, False)[0]
+        player_b_bench_width = renderer.get_text_width_height_descent(f"{team_b_bench[i]}", font_minutes, False)[0]
 
+        player_a_name_width_fraction = player_a_name_width / fig_width_in_pixels
+        player_a_money_width_fraction = player_a_money_width / fig_width_in_pixels
+        player_a_bench_width_fraction = player_a_bench_width / fig_width_in_pixels
+
+        player_b_name_width_fraction = player_b_name_width / fig_width_in_pixels
+        player_b_money_width_fraction = player_b_money_width / fig_width_in_pixels
+        player_b_bench_width_fraction = player_b_bench_width / fig_width_in_pixels
+
+        offset = 0.05  # Increased this value to move the text further right
+
+        # Adjust y position offsets for Team A (center-aligned)
+        ax_text.text(x_pos_A + 0.13, y_start_A - i * y_step, f"{team_a_players[i]}", va='center', ha='center', color='black', fontproperties=name_font_a)
+        ax_text.text(x_pos_A + 0.29, y_start_A - i * y_step + 0.02, f"{team_a_money[i]}", va='center', ha='center', color='black', fontproperties=font_money)
+        ax_text.text(x_pos_A + 0.293, y_start_A - i * y_step - 0.04, f"{team_a_bench[i]}", va='center', ha='center', color='black', fontproperties=font_minutes)
+
+        # Adjust y position offsets for Team B (center-aligned)
+        ax_text.text(x_pos_B - 0.08 - player_b_name_width_fraction - offset, y_start_B - i * y_step, f"{team_b_players[i]}", va='center', ha='left', color='black', fontproperties=name_font_b)
+        ax_text.text(x_pos_B - 0.24 - player_b_money_width_fraction - offset, y_start_B - i * y_step + 0.02, f"{team_b_money[i]}", va='center', ha='left', color='black', fontproperties=font_money)
+        ax_text.text(x_pos_B - 0.237 - player_b_bench_width_fraction - offset, y_start_B - i * y_step - 0.04, f"{team_b_bench[i]}", va='center', ha='left', color='black', fontproperties=font_minutes)
+
+    
+   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   
     #add a vertical line between the y_start_A and y_start_B
     #add here
-    # x_mid = (x_pos_A + x_pos_B) / 2
+    x_mid = (x_pos_A + x_pos_B) / 2
 
     # Add the vertical line
-    # ax_text.axvline(x=(x_pos_B-0.055), ymin=0, ymax=0.6, color='black', linestyle='--', linewidth=1)
+    ax_text.axvline(x=x_mid, ymin=0.05, ymax=0.7, color='black', linestyle='--', linewidth=1)
     
    
     # Add heading

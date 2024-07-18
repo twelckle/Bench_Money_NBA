@@ -1,6 +1,7 @@
 from makeImage import make_image
 from nbaAPI import getGameInfo
 from twitter import postToTwitter
+from webScrap import webScrape
 from datetime import datetime, timedelta
 from nba_api.stats.endpoints import scoreboardv2
 
@@ -16,10 +17,12 @@ def update_to_next_day(date_str):
     return next_day_str
 
 
+webScrape('2023') #This is for season 2023-2024 // Need to change to create for seasons before or after
+
 # current_date = datetime.now().date()
 current_date = '2024-03-19'
 # formatted_date = current_date.strftime("%Y-%m-%d")
-date = '2024-03-15'  # YYYY-MM-DD format
+date = '2024-03-16'  # YYYY-MM-DD format
 while(current_date != date):
     date_obj = datetime.strptime(date, '%Y-%m-%d')
     formatted_date = date_obj.strftime("%B %d, %Y")
@@ -35,7 +38,13 @@ while(current_date != date):
         data['DateSave'] = date
         imagePath = f'{make_image(data)}.png'
         print(imagePath)
-        # postToTwitter(imagePath)
+        caption = {
+            'Teams': data['Team'],
+            'Date': formatted_date,
+            'Score': data['Score'],
+        }
+        postToTwitter(imagePath, caption)
+        exit()
     
     date = next_day_date = update_to_next_day(date)
 

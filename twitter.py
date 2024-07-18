@@ -22,12 +22,52 @@ client = tweepy.Client(
     wait_on_rate_limit=True,
 )
 
+nba_team_hashtags = {
+    'ATL': '#TrueToAtlanta', 
+    'BOS': '#BleedGreen', 
+    'BKN': '#BrooklynGrit', 
+    'CHA': '#AllFly', 
+    'CHI': '#BullsNation', 
+    'CLE': '#BeTheFight', 
+    'DAL': '#MFFL',  # Mavs Fans For Life
+    'DEN': '#MileHighBasketball', 
+    'DET': '#DetroitBasketball', 
+    'GSW': '#DubNation', 
+    'HOU': '#Rockets', 
+    'IND': '#Pacers', 
+    'LAC': '#ClipperNation', 
+    'LAL': '#LakeShow', 
+    'MEM': '#GrindCity', 
+    'MIA': '#HeatCulture', 
+    'MIL': '#FearTheDeer', 
+    'MIN': '#RaisedByWolves', 
+    'NOP': '#WBD',  # Won't Bow Down
+    'NYK': '#NewYorkForever', 
+    'OKC': '#ThunderUp', 
+    'ORL': '#MagicTogether', 
+    'PHI': '#HereTheyCome', 
+    'PHX': '#WeAreTheValley', 
+    'POR': '#RipCity', 
+    'SAC': '#SacramentoProud', 
+    'SAS': '#GoSpursGo', 
+    'TOR': '#WeTheNorth', 
+    'UTA': '#TakeNote', 
+    'WAS': '#DCAboveAll'
+}
+
 # Upload image to Twitter. Replace 'filename' your image filename.
-def postToTwitter(gameImage):
+def postToTwitter(gameImage, caption):
     media_id = api.media_upload(filename=gameImage).media_id_string
     # Text to be Tweeted
-    text = "Hello Twitter!"
+    text_parts = [
+        f'Final: {caption["Teams"][0]} {caption["Score"][0]}, {caption["Teams"][1]} {caption["Score"][1]}',
+        f'{caption['Date']}',
+        f'{nba_team_hashtags[caption["Teams"][0]]} // {nba_team_hashtags[caption["Teams"][1]]}',
+        f'#{caption["Teams"][0]}vs{caption["Teams"][1]} // #{caption["Teams"][1]}vs{caption["Teams"][0]}',
+        '#NBA #NBATwitter'
+    ]
 
+    text = '\n'.join(text_parts)
     # Send Tweet with Text and media ID
     client.create_tweet(text=text, media_ids=[media_id])
     print("Tweeted!")
