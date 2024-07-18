@@ -2,70 +2,14 @@ import time
 
 # from nba_api.live.nba.endpoints import scoreboard
 from nba_api.stats.endpoints import leaguegamefinder, boxscoretraditionalv2
-from nba_api.stats.static import teams
+from nba_api.stats.static import teams, players
 from nba_api.stats.library.parameters import SeasonType
 from pymongo import MongoClient
-
 
 client = MongoClient('mongodb://localhost:27017/')  # Replace with your MongoDB URI if different
 db = client['nba_db']
 salaryTeams = db['teams']
 gameData = db['games']
-
-'''
-Check to see if that ID is already in the database
-If yes
-    -> add to the entry team x and the calculations
-If no
-    -> create entry and add team y and the calculations
-Entry includes
-    -gameID ('GameID')
-    -matchup ('MATCHUP')
-    -location ()
-    -game date ('GAME_DATE')
-    -season_id ('SEASON_ID')
-
-'''
-
-
-
-# nba_teams = teams.get_teams()
-# # Select the dictionary for the Celtics, which contains their team ID
-# minnesota = [team for team in nba_teams if team['abbreviation'] == 'MIN'][0]
-# minnesota_id = minnesota['id']
-
-# gamefinder = leaguegamefinder.LeagueGameFinder(team_id_nullable=minnesota_id)
-# # The first DataFrame of those returned is what we want.
-# games = gamefinder.get_data_frames()[0]
-# games.head()
-
-# gameDate = '2018-04-04'
-# lookAt_game_Date = games.sort_values(gameDate).iloc[-1]
-
-# seasons = [
-#     '2023-24', '2022-23', '2021-22', '2020-21', '2019-20', '2018-19', 
-#     '2017-18', '2016-17', '2015-16'
-# ]
-
-
-
-# team_id = 1610612744
-
-# # Define the season (example for the 2023-24 season)
-# season = '2023-24'
-
-# # Step 1: Get the list of games for the team this season
-
-# team_id = 1610612744
-
-# # Define the season
-# season = '2023-24'
-
-# # Step 1: Get the list of games for the team this season
-# gamefinder = leaguegamefinder.LeagueGameFinder(team_id_nullable=team_id, season_nullable=season)
-
-# # Print the JSON response
-# print(gamefinder.get_dict())
 
 def getYear(dateStr):
     year = int(dateStr[0:4])
@@ -101,11 +45,20 @@ def makePlayerNameSmaller(name):
     else:
         return name[0:18]
 
-def topPlayerCalc(playerName, money_spent, topPlayers):
+def get_player_id_by_name(player_name):
+    # Search for the player by full name
+    search_results = players.find_players_by_full_name(player_name)
+    
+    if search_results:
+        return search_results[0]['id']
+    else:
+        return None
+
+def topPlayerCalc(playerName, money_spent, topPlayers, benchMinutes):
     for index in range(0, 3):
         if(topPlayers[index][1] < money_spent):
-            playerName = makePlayerNameSmaller(playerName)
-            insertPlayer([playerName, money_spent], index, topPlayers)
+            playerID = get_player_id_by_name(playerName)
+            insertPlayer([playerName, money_spent, playerID, benchMinutes], index, topPlayers)
             return
 
 def addCommasNumber(number):
@@ -114,86 +67,123 @@ def addCommasNumber(number):
     
     return formatted_number
 
+def returnName(name):
+    firstInitial = name[0]
+    spaceIndex = name.find(' ')
+    if spaceIndex != -1:
+        lastName = name[spaceIndex + 1:]
+        return f"{firstInitial}. {lastName}"
+    return name
+
 def playerFormat(players):
     finalPlayers = []
     for player in players:
-        str = f'• {player[0]}: ${addCommasNumber(player[1])}'
+        playerName = returnName(player[0])
+        str = f'{playerName}'
         finalPlayers.append(str)
     return finalPlayers
 
+def benchMinutesFormat(players):
+    benchMinutes = []
+    for player in players:
+        benchMin = player[3]
+        benchMinutes.append(benchMin)
+    return benchMinutes
+
+def moneyFormat(players):
+    finalMoney = []
+    for player in players:
+        str = f'${addCommasNumber(player[1])}'
+        finalMoney.append(str)
+    return finalMoney
+
+def seconds_to_min_sec(seconds):
+    minutes = int(seconds // 60)
+    return f"({minutes} Minutes)"
+
+def getData(year, boxscore_data, totalSeconds, money_spent, team, topPlayers):
+    for index, row in boxscore_data.iterrows():
+        if team != row['TEAM_ABBREVIATION']:
+            if team == "":
+                team = row['TEAM_ABBREVIATION']
+                teamOne = team 
+            else:
+                team = row['TEAM_ABBREVIATION']
+                teamTwo = team
+                team1 = int(money_spent)
+                teamOnePlayers = topPlayers.copy()
+                topPlayers = [['none', 0, 0, ''], ['none', 0, 0, ''], ['none', 0, 0, '']]
+            money_spent = 0
+        
+        playerName = row['PLAYER_NAME']
+        timeAll = row['MIN']
+        secondsPlayed = getTime(timeAll)
+
+        queryPlayer = {"year": str(year), "players.name": playerName}
+        projection = {"players.$": 1, "totalCapHit": 1}
+
+        player_data = salaryTeams.find_one(queryPlayer, projection)
+        if player_data is None: continue
+
+
+        salary = int(player_data.get('players')[0].get('capHit')) / 82
+        time_played_ratio = secondsPlayed / (totalSeconds / 5)
+        bench_time = (totalSeconds / 5) - secondsPlayed
+        benchMinutes = seconds_to_min_sec(bench_time)
+        player_contribution = salary * time_played_ratio
+        player_money_spent = (salary - player_contribution)
+        money_spent += player_money_spent
+        
+        # print(playerName, player_money_spent, benchMinutes)
+        topPlayerCalc(playerName, player_money_spent, topPlayers, benchMinutes)
+    return teamOne,teamTwo,team1,money_spent,topPlayers,teamOnePlayers
 
 def getGameInfo(game):
     game_date = game['GAME_DATE_EST']
     game_id = game['GAME_ID']
     year = getYear(game_date)
-    # print(f"Getting boxscore for game ID: {game_id} on day {game_date}")
-    # Get the boxscore
     time.sleep(1)
     boxscore = boxscoretraditionalv2.BoxScoreTraditionalV2(game_id=game_id)
-    boxscore_data = boxscore.get_data_frames()[0]  # You can also get other data frames depending on what you need
+    boxscore_data = boxscore.get_data_frames()[0]
     team_stats = boxscore.get_data_frames()[1]
-    teamOne = team_stats.get('TEAM_ABBREVIATION')[0]
-    teamTwo = team_stats.get('TEAM_ABBREVIATION')[1]
-
-    winningTeam = teamTwo
-    totalSeconds = int(team_stats.get('MIN')[0][0:3])*60
-    teamScores = team_stats.get('PTS')
-    if(int(teamScores[0]) > int(teamScores[1])):
-        winningTeam = teamOne
+    teamOne = boxscore_data.get('TEAM_ABBREVIATION')[0]
+    teamTwo = boxscore_data.get('TEAM_ABBREVIATION')[1]
+    teamOneScore = team_stats.get('PTS')[0]
+    teamTwoScore = team_stats.get('PTS')[1]
+    if(team_stats.get('TEAM_ABBREVIATION')[0] != teamOne):
+        temp = teamOneScore
+        teamOneScore = teamTwoScore
+        teamTwoScore = temp
+    totalSeconds = int(team_stats.get('MIN')[0][0:3]) * 60
     team1 = 0
     money_spent = 0
     team = ""
-    topPlayers = [['none', 0], ['none', 0], ['none', 0]]
-    teamOneCapHit = 0
-    teamTwoCapHit = 0
-    for index, row in boxscore_data.iterrows():
-        if(team != row['TEAM_ABBREVIATION']):
-            if(team == ""):
-                team = row['TEAM_ABBREVIATION']
-            else:
-                team = row['TEAM_ABBREVIATION']
-                team1 = int(money_spent)
-                teamOnePlayers = topPlayers
-                topPlayers = topPlayers = [['none', 0], ['none', 0], ['none', 0]]
-            money_spent = 0
-        playerName = row['PLAYER_NAME']
-        timeAll = row['MIN']
-        secondsPlayed = getTime(timeAll)
+    topPlayers = [['none', 0, 0, ''], ['none', 0, 0, ''], ['none', 0, 0, '']]
+    teamOnePlayers = [['none', 0, 0, ''], ['none', 0, 0, ''], ['none', 0, 0, '']]
+    teamOneID = []
+    teamTwoID = []
+    teamOne, teamTwo, team1, money_spent, topPlayers, teamOnePlayers = getData(year, boxscore_data, totalSeconds, money_spent, team, topPlayers)
 
-        # Query to find the player in the 'players' array
-        queryPlayer = {"year": str(year) ,"players.name": playerName}
-
-        # Projection to include only the players array
-        projection = {"players.$": 1, "totalCapHit": 1}
-
-        player_data = salaryTeams.find_one(queryPlayer, projection)
-        if(player_data == None): continue
-
-        if(teamOneCapHit != 0 and int(player_data.get('totalCapHit')) != teamOneCapHit):
-            teamTwoCapHit = int(player_data.get('totalCapHit'))
-        elif(teamOneCapHit == 0):
-            teamOneCapHit = int(player_data.get('totalCapHit'))
-
-        # salary_ratio = int(player_data.get('players')[0].get('capHit')) / int(player_data.get('totalCapHit'))
-        # time_played_ratio = seconds / (totalSeconds/5)
-        # player_contribution = salary_ratio * time_played_ratio
-        # money_spent += player_contribution
-
-        salary = int(player_data.get('players')[0].get('capHit')) / 82
-        time_played_ratio = secondsPlayed / (totalSeconds/5)
-        player_contribution = salary * time_played_ratio
-        player_money_spent = (salary-player_contribution)
-        money_spent += player_money_spent
-        print(playerName, player_money_spent)
-        # print(playerName + " = " + str(salary - player_contribution))
-        topPlayerCalc(playerName, player_money_spent, topPlayers)
-
+    # Finalize last team's top players
     team2 = int(money_spent)
-    teamTwoPlayers = playerFormat(topPlayers)
-        # team1 = team1 / (teamOneCapHit/82)
-        # team2 = team2 / (teamTwoCapHit/82)
+    teamTwoPlayers = topPlayers
 
+    for i in range(3):
+        teamTwoID.append(topPlayers[i][2])
+        teamOneID.append(teamOnePlayers[i][2])
+    
+    teamOneMoney = moneyFormat(teamOnePlayers)
+    teamOneBenchMinutes = benchMinutesFormat(teamOnePlayers) 
     teamOnePlayers = playerFormat(teamOnePlayers)
+
+    teamTwoMoney = moneyFormat(teamTwoPlayers)
+    teamTwoBenchMinutes = benchMinutesFormat(teamTwoPlayers) 
+    teamTwoPlayers = playerFormat(teamTwoPlayers)
+    # print()
+    # print(teamOnePlayers)
+    # print()
+    # print(teamTwoPlayers)
+    # print()
     data = {
         'Team': [teamOne, teamTwo],
         'Spending': [team1, team2],
@@ -201,10 +191,20 @@ def getGameInfo(game):
             teamOnePlayers,
             teamTwoPlayers
         ],
-        'WinningTeam': winningTeam,
-        'Score': [int(teamScores[0]), int(teamScores[1])]
+        'Money': [
+            teamOneMoney,
+            teamTwoMoney
+        ],
+        'PlayerIDs': [
+            teamOneID,
+            teamTwoID
+        ],
+        'BenchMin': [
+            teamOneBenchMinutes,
+            teamTwoBenchMinutes
+        ],
+        'Score': [teamOneScore, teamTwoScore]
     }
-
     return data
 
 # Define the date for which you want to query games

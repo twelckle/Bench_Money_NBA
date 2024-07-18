@@ -1,12 +1,3 @@
-# import tweepy
-
-# # Replace these values with your own API keys and access tokens
-# API_KEY = 'sGWKfZ2IRh33tILkJVnc0qhcv'
-# API_SECRET_KEY = 'VZtpcLVYgTHWKPPVWGcBF4wlZ20GAaQjEEwaZta76K1V8QMkbw'
-# BEARER_TOKEN = 'AAAAAAAAAAAAAAAAAAAAAI1DuwEAAAAAthJbSSYJBQ%2FHlnolQklchrpf95Y%3Dgayxa3ENi8P4nsyVzDVY8jwoiq4DShgDW4fPqgt5V8RYwAmeB6'
-
-# ACCESS_TOKEN = '1811860120529154048-ayYMXyyluYAuqIqXoWX0cJoVGVDx9J'
-# ACCESS_TOKEN_SECRET = 'AGM76I7wZ02TjyBnmgySAg2FhT1YmcSnnaef4I0cmO8yj'
 import tweepy
 
 # Enter API tokens below
@@ -32,13 +23,11 @@ client = tweepy.Client(
 )
 
 # Upload image to Twitter. Replace 'filename' your image filename.
-gameImage = 'CHA_vs_ATL:2024-04-10.png'
-media_id = api.media_upload(filename=gameImage).media_id_string
-print(media_id)
+def postToTwitter(gameImage):
+    media_id = api.media_upload(filename=gameImage).media_id_string
+    # Text to be Tweeted
+    text = "Hello Twitter!"
 
-# Text to be Tweeted
-text = "Hello Twitter!"
-
-# Send Tweet with Text and media ID
-client.create_tweet(text=text, media_ids=[media_id])
-print("Tweeted!")
+    # Send Tweet with Text and media ID
+    client.create_tweet(text=text, media_ids=[media_id])
+    print("Tweeted!")

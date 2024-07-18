@@ -1,4 +1,4 @@
-#!/Users/twelckle/Desktop/nba_stats_project/nba_env/bin/python3.12
+#!/Users/twelckle/Documents/GitHub/Bench_Money_NBA/nba_env/bin/python3.12
 # -*- coding: utf-8 -*-
 import re
 import sys
