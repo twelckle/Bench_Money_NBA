@@ -17,12 +17,12 @@ def update_to_next_day(date_str):
     return next_day_str
 
 
-webScrape('2023') #This is for season 2023-2024 // Need to change to create for seasons before or after
+# webScrape('2023') #This is for season 2023-2024 // Need to change to create for seasons before or after
 
 # current_date = datetime.now().date()
-current_date = '2024-03-19'
+current_date = '2024-4-19'
 # formatted_date = current_date.strftime("%Y-%m-%d")
-date = '2024-03-16'  # YYYY-MM-DD format
+date = '2024-2-20'  # YYYY-MM-DD format
 while(current_date != date):
     date_obj = datetime.strptime(date, '%Y-%m-%d')
     formatted_date = date_obj.strftime("%B %d, %Y")
@@ -44,7 +44,7 @@ while(current_date != date):
             'Score': data['Score'],
         }
         postToTwitter(imagePath, caption)
-        exit()
+        # exit()
     
     date = next_day_date = update_to_next_day(date)
 

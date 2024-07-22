@@ -70,4 +70,5 @@ def postToTwitter(gameImage, caption):
     text = '\n'.join(text_parts)
     # Send Tweet with Text and media ID
     client.create_tweet(text=text, media_ids=[media_id])
-    print("Tweeted!")
+    tweeted = f'Tweeted! {caption["Teams"][0]} vs {caption["Teams"][1]}'
+    print(tweeted)

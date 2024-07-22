@@ -47,6 +47,9 @@ logo_colors = {
     'WAS': {'primary': '#0D2240', 'secondary': '#CF0A2C'},  # Washington Wizards
 }
 
+playoffs = False
+finals = False
+
 def hex_to_rgb(hex_color):
     hex_color = hex_color.lstrip('#')
     return tuple(int(hex_color[i:i+2], 16) for i in (0, 2, 4))
@@ -89,7 +92,7 @@ def svg_to_png(svg_path, dpi=300):
 
 # Function to place the logo using OffsetImage and AnnotationBbox
 def place_logo(ax, logo_path, zoom=1.0, position=(0, 1)):
-    logo_img = Image.open(logo_path)
+    logo_img = Image.open(logo_path).convert('RGBA')
     imagebox = OffsetImage(logo_img, zoom=zoom)
     ab = AnnotationBbox(imagebox, position, frameon=False, xycoords='axes fraction', boxcoords="axes fraction", pad=0, box_alignment=(0, 1))
     ax.add_artist(ab)
@@ -192,9 +195,19 @@ def make_image(data):
 
     logo_team_a_x = 0.15
     logo_team_b_x = 0.85
-    # Add the scores with respective colors
-    logos_ax.text(logo_team_a_x+0.25, 0.4, str(team_a_score), ha='center', va='bottom', fontproperties=font_score)
-    logos_ax.text(logo_team_b_x-0.25, 0.4, str(team_b_score), ha='center', va='bottom', fontproperties=font_score)
+    
+    if(playoffs):
+        
+        if(finals):
+            place_logo(logos_ax, './nba_logos/finals.png', zoom=0.06, position=(.45, .8))
+        else:
+            place_logo(logos_ax, './nba_logos/playoffs.png', zoom=0.2, position=(.44, .75))
+
+        logos_ax.text(logo_team_a_x+0.25, 0.25, str(team_a_score), ha='center', va='bottom', fontproperties=font_score)
+        logos_ax.text(logo_team_b_x-0.25, 0.25, str(team_b_score), ha='center', va='bottom', fontproperties=font_score)
+    else:
+        logos_ax.text(logo_team_a_x+0.25, 0.4, str(team_a_score), ha='center', va='bottom', fontproperties=font_score)
+        logos_ax.text(logo_team_b_x-0.25, 0.4, str(team_b_score), ha='center', va='bottom', fontproperties=font_score)
 
     # Convert logos to arrays without resizing
     def get_image(image, zoom=0.9):  # Adjust the zoom to control display size
@@ -254,7 +267,7 @@ def make_image(data):
 
         # Add text underneath the bar graph
     heading = 'Top 3 Bench Expenses'
-    subText = '(Time Spent on Bench)'
+    subText = '(Minutes on Bench)'
     team_a_players = df['Players'][0]
     team_b_players = df['Players'][1]
 
@@ -378,4 +391,3 @@ def make_image(data):
     plt.savefig(savePath, dpi=dpi, bbox_inches='tight', pad_inches=0.1)
     plt.close(fig)
     return savePath
-    
