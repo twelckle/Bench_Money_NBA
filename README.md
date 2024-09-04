@@ -40,8 +40,6 @@
    cd Bench_Money_NBA
    
 2.	Install dependencies:
-     ```bash
-     pip install -r requirements.txt
 3. Set up your MongoDB database and update the connection details in your project.
 4. Get your API keys for the NBA and Twitter APIs, and add them to your environment variables or a config file.
 
