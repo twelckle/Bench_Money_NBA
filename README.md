@@ -51,21 +51,6 @@
 2. Generate visual representations of team spending on bench players.
 3. Post the generated images to Twitter by running the script.
 
-### Example
-
-Here is a basic example of how to generate and tweet a game summary:
-  
-  ```python
-  import tweepy
-  from matplotlib import pyplot as plt
-  
-  # Your existing code to create a plot
-  
-  # Twitter API authentication and tweet
-  api = tweepy.API(auth)
-  media_id = api.media_upload(filename='output.png').media_id_string
-  client.create_tweet(text="Game summary!", media_ids=[media_id])
-  '''
 
 ## Contributing
 
