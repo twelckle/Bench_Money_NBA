@@ -39,10 +39,10 @@
    git clone https://github.com/twelckle/Bench_Money_NBA.git
    cd Bench_Money_NBA
    
-2.	Install dependencies:
-3. Set up your MongoDB database and update the connection details in your project.
-4. Get your API keys for the NBA and Twitter APIs, and add them to your environment variables or a config file.
-
+2.	Install dependencies
+3. Set up your MongoDB database and update the connection details in your project. The link can be found in the nbaAPI.py file.
+4. Get your API keys for the Twitter APIs, and add them to the twitter.py file.
+   
 ## Usage
 
 1. Fetch NBA game data and player salaries using the NBA API and web scraping scripts.
