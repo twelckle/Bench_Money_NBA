@@ -14,7 +14,6 @@
 
 - **Python**
   - pandas
-  - matplotlib
   - PIL (Python Imaging Library)
   - cairosvg
   - tweepy
